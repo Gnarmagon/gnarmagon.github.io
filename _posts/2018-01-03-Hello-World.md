@@ -2,11 +2,11 @@
 layout: default
 ---
 
-# Hello World Guys :)
-at the moment I really don't like jekyll
+# Hello World Guys :smile:
+It's seems to get better :smile:
 
-because it looks so difficult for a beginner ...
+I mean I installed [Typora](https://www.typora.io/#windows) now and it's working so good <3
 
-but I will see what happens :)
+Now I only have learn Markdown Syntax, make Assets, configure my Page 
 
-Thumbs up +1
+and add Emoji support.
