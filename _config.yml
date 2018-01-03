@@ -8,7 +8,8 @@ github_username: gnarmagon
 theme: minima
 plugins:
     - jemoji
-
+    - jekyll-feed
+    
 markdown: kramdown
 gems:
     - jekyll-feed
