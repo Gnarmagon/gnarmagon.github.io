@@ -1,2 +1,5 @@
-theme: jekyll-theme-minimal
-timezone: Europe/Berlin
+title: Luro02's Blog
+description: For now just a simple blog :)
+show_downloads: true
+google_analytics:
+theme: jekyll-theme-merlot

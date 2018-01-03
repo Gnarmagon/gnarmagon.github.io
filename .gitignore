@@ -3,3 +3,9 @@ _site
 .jekyll-metadata
 
 config.codekit
+_site
+.sass-cache
+Gemfile.lock
+*.gem
+
+commit.cmd
