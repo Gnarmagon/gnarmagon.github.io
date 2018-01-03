@@ -1,5 +1,17 @@
 title: Luro02's Blog
+email: altenau.lucas@gmail.com
 description: For now just a simple blog :)
-show_downloads: true
-google_analytics:
-theme: jekyll-theme-merlot
+twitter_username: luroalive
+github_username: gnarmagon
+
+#
+theme: minima
+plugins:
+    - jemoji
+
+markdown: kramdown
+gems:
+    - jekyll-feed
+exclude:
+    - Gemfile
+    - Gemfile.lock
