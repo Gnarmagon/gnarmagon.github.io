@@ -4,8 +4,6 @@
 
 *Merlot is a Jekyll theme for GitHub Pages. You can [preview the theme to see what it looks like](http://pages-themes.github.io/merlot), or even [use it today](#usage).*
 
-![Thumbnail of merlot](thumbnail.png)
-
 ## Usage
 
 To use the Merlot theme:
