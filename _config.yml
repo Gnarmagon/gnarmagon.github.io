@@ -49,11 +49,9 @@ defaults:
       comments: true
 # Build settings
 markdown: kramdown
-<<<<<<< HEAD
 
-=======
 theme: minimal-mistakes-jekyll
->>>>>>> 96dd90d45f9e575bc5e5fdf23986094b16e17efd
+
 plugins:
   - jekyll-feed
   - jemoji
