@@ -11,6 +11,10 @@ categories:
  - switch
  - teamxecuter
  - 34c3
+<<<<<<< HEAD
+=======
+
+>>>>>>> 96dd90d45f9e575bc5e5fdf23986094b16e17efd
 ---
 
 You may have already heared about it or not ? that the Nintendo Switch had some huge breaktroughs in terms of hacking and after the 34c3 I am pretty sure, that the Switch will be fully open to piracy and homebrew in 2018 and that could have some major influence on sales and developers that could skip (again) the Nintendo Switch... :(
