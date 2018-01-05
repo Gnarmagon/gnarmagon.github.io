@@ -13,20 +13,43 @@
 # you will see them accessed via {{ site.title }}, {{ site.email }}, and so on.
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
-
+# <3 https://mmistakes.github.io/minimal-mistakes/docs/configuration/
 # Site settings
 title: Luro02's Blog
 email: altenau.lucas@gmail.com
 description: For now just a simple blog :)
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://gnarmagon.github.io/" # the base hostname & protocol for your site, e.g. http://example.com
 # Social Network
 twitter_username: luroalive
 github_username: gnarmagon
 
+# theme
+remote_theme: "mmistakes/minimal-mistakes"
+minimal_mistakes_skin: "dark" # "air", "aqua", "contrast", "dark", "dirt", "neon", "mint", "plum" "sunrise"
+locale: "de-DE"
+repository: "gnarmagon/gnarmagon.github.io"
+search: true
+# Comments
+comments:
+  provider  : "staticman_v2"
+staticman:
+  branch    : "master"
+reCaptcha:
+    enabled: true
+    siteKey: 6Lfafj8UAAAAAIKZ9V5xCdni_BMQzhE1Y5OlUOQj
+    secret: cz012unO+5gPEaSd2/ktQM0oIhyxLBc9FS0Ao3nkfsSQMOrvi+ITRAIU7ev0U0hbMIA2HdErioQJLFE2/V+VhokjGvwDZKd2JaFbFrSgoqr9rtcoK1YJCKM/4gn7hqxMu2mb0Zbg78ZoQ5P082XvoFa9J8X052q4WhDHgnF/lGg=
+defaults:
+  # _posts
+  - scope:
+      path: ""
+      type: posts
+    values:
+      read_time: true
+      comments: true
 # Build settings
 markdown: kramdown
-theme: minimal-mistakes-jekyll
+
 plugins:
   - jekyll-feed
   - jemoji

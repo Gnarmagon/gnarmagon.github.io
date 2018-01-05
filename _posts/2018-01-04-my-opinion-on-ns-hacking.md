@@ -2,6 +2,8 @@
 layout: post
 title:  "My opinion about the recent nintendo switch hacking discussion"
 date:   2018-01-03 20:24:14 +0100
+header:
+	teaser: /assets/images/34c3_nintendo_switch.jpg
 categories:
  - hacking
  - nintendo
