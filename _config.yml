@@ -20,12 +20,13 @@ email: altenau.lucas@gmail.com
 description: For now just a simple blog :)
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
+# Social Network
 twitter_username: luroalive
 github_username: gnarmagon
 
 # Build settings
 markdown: kramdown
-theme: minima
+theme: minimal-mistakes-jekyll
 plugins:
   - jekyll-feed
   - jemoji
