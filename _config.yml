@@ -20,8 +20,11 @@ email: altenau.lucas@gmail.com
 description: For now just a simple blog :)
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://gnarmagon.github.io/" # the base hostname & protocol for your site, e.g. http://example.com
+timezone: Europe/Berlin
+
 # Social Network
-twitter_username: luroalive
+twitter:
+    username: "luroalive"
 github_username: gnarmagon
 
 # theme
@@ -30,6 +33,21 @@ minimal_mistakes_skin: "dark" # "air", "aqua", "contrast", "dark", "dirt", "neon
 locale: "de-DE"
 repository: "gnarmagon/gnarmagon.github.io"
 search: true
+og_image: /assets/images/site-logo.png
+# analytics
+analytics:
+    provider: "google-universal"
+    google:
+        tracking_id: "UA-107138544-1"
+# Author Tab:
+author:
+  name   : "Your Name"
+  avatar : "/assets/images/bio-photo.jpg"
+  bio    : "My awesome biography constrained to a sentence or two goes here."
+  email  : # optional
+  uri    : "http://your-site.com"
+  home   : # null (default), "absolute or relative url to link to author home"
+
 # Comments
 comments:
   provider  : "staticman_v2"
@@ -45,8 +63,13 @@ defaults:
       path: ""
       type: posts
     values:
+      layout: single
+      author_profile: true
       read_time: true
       comments: true
+      share: true
+      related: true
+
 # Build settings
 markdown: kramdown
 
