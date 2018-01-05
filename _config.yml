@@ -81,4 +81,7 @@ plugins:
 exclude:
   - Gemfile
   - Gemfile.lock
+# Other stuff
 
+head_scripts:
+  - /assets/js/script.js
