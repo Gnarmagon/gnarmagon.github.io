@@ -1,19 +1,9 @@
-<!DOCTYPE html>
 <html>
     <head>
-	<!-- include all Javascripts used on this page here: -->
-        <script type="text/javascript" src="assets/js/info.js"></script>
+        <script type="text/javascript" src="assets/js/webkit.js"></script>
     </head>
-	<body>
-		<pre>
-<script type="text/javascript"">
-	var webkit = detectWebKit();
-	if (webkit["iswebkit"]) {
-		document.writeln("WebKit version: " + webkit["version"]);
-		document.writeln("Browser name: " + webkit["browser"]);
-	}
-
-</script>
-		</pre>
-	</body>
+    <body>
+        <input type="button" onclick="checkWebKit()" value="Webkit Version"/>
+		<input type="button" onclick="henkaku_poc()" value="Henkaku PoC"/>
+    </body>
 </html>
